@@ -1,42 +1,40 @@
 // app/index.js
-import { View, Text, FlatList, Pressable, StyleSheet, Alert } from 'react-native';
-import React, { useState } from 'react';
-import { Link, useFocusEffect } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, FlatList, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'expo-router';
+import { db } from '../firebaseConfig'; // Firebase config ko import kiya
+import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore'; // Firebase functions
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const [stockList, setStockList] = useState([]);
+  const [loading, setLoading] = useState(true); // Loading state add kiya
 
-  // Yeh function har baar screen khulne par data load karega
-  useFocusEffect(
-    React.useCallback(() => {
-      loadStockItems();
-    }, [])
-  );
+  // Yeh function ab real-time mein data sunega
+  useEffect(() => {
+    setLoading(true);
+    // 'stock' collection ko suno
+    const unsubscribe = onSnapshot(collection(db, 'stock'), (querySnapshot) => {
+      const items = [];
+      querySnapshot.forEach((doc) => {
+        // id ko data ke saath merge karo
+        items.push({ id: doc.id, ...doc.data() });
+      });
+      setStockList(items);
+      setLoading(false);
+    });
 
-  const loadStockItems = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('@stockList');
-      if (jsonValue !== null) {
-        setStockList(JSON.parse(jsonValue));
-      } else {
-        setStockList([]); // Agar kuch na mile toh list khaali rakho
-      }
-    } catch (e) {
-      console.error('Failed to load items.', e);
-    }
-  };
+    // Cleanup function (jab component band ho)
+    return () => unsubscribe();
+  }, []); // [] ka matlab yeh sirf ek baar run hoga
 
   const deleteItem = async (id) => {
     try {
-      const updatedList = stockList.filter((item) => item.id !== id);
-      setStockList(updatedList);
-      const jsonValue = JSON.stringify(updatedList);
-      await AsyncStorage.setItem('@stockList', jsonValue);
+      // AsyncStorage ki jagah ab Firestore se delete karenge
+      await deleteDoc(doc(db, 'stock', id));
       Alert.alert('Success', 'Item deleted successfully.');
     } catch (e) {
-      console.error('Failed to delete item.', e);
+      console.error('Error deleting document: ', e);
     }
   };
 
@@ -62,7 +60,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Dashboard</Text>
+      <Text style={styles.title}>Dashboard (Cloud)</Text>
       <Link href="/create" asChild>
         <Pressable style={styles.addButton}>
           <Text style={styles.buttonText}>ADD ITEM IN STOCK</Text>
@@ -70,17 +68,22 @@ export default function HomeScreen() {
       </Link>
 
       <Text style={styles.headingText}>All Items in the stock</Text>
-      <FlatList
-        data={stockList}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={<Text style={styles.emptyText}>No items in stock.</Text>}
-      />
+      
+      {loading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <FlatList
+          data={stockList}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={<Text style={styles.emptyText}>No items in stock.</Text>}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-// Styles (CSS jaisa)
+// Styles (Styles mein koi badlaav nahi hai)
 const styles = StyleSheet.create({
   container: {
     flex: 1,

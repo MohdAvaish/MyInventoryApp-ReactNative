@@ -2,7 +2,8 @@
 import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '../firebaseConfig'; // Firebase config ko import kiya
+import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore'; // Firebase functions
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CreateScreen() {
@@ -10,29 +11,31 @@ export default function CreateScreen() {
   const [stockAmt, setStockAmt] = useState('');
   const [isEdit, setIsEdit] = useState(false);
 
-  const router = useRouter(); // Page badalne ke liye
-  const params = useLocalSearchParams(); // Home screen se bheji hui ID lene ke liye
+  const router = useRouter();
+  const params = useLocalSearchParams();
 
   useEffect(() => {
-    // Agar params mein ID hai, matlab hum 'Edit' kar rahe hain
     if (params.id) {
       setIsEdit(true);
       loadItemData(params.id);
     }
   }, [params.id]);
 
-  // Edit karne ke liye puraana data load karna
   const loadItemData = async (id) => {
     try {
-      const jsonValue = await AsyncStorage.getItem('@stockList');
-      const list = JSON.parse(jsonValue);
-      const itemToEdit = list.find((item) => item.id === id);
-      if (itemToEdit) {
-        setItemName(itemToEdit.name);
-        setStockAmt(itemToEdit.stock.toString());
+      // AsyncStorage ki jagah ab Firestore se item fetch karenge
+      const docRef = doc(db, 'stock', id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const item = docSnap.data();
+        setItemName(item.name);
+        setStockAmt(item.stock.toString());
+      } else {
+        console.log('No such document!');
       }
     } catch (e) {
-      console.error('Failed to load item for edit.', e);
+      console.error('Error loading document: ', e);
     }
   };
 
@@ -43,30 +46,25 @@ export default function CreateScreen() {
     }
 
     try {
-      const newItem = {
-        id: isEdit ? params.id : Date.now().toString(), // Agar edit hai toh puraani ID, warna nayi
-        name: itemName,
-        stock: parseInt(stockAmt), // Number mein badal kar
-      };
-
-      const jsonValue = await AsyncStorage.getItem('@stockList');
-      let list = jsonValue ? JSON.parse(jsonValue) : [];
-
       if (isEdit) {
-        // Edit waala logic
-        list = list.map((item) => (item.id === params.id ? newItem : item));
+        // Edit waala logic (Update)
+        const itemRef = doc(db, 'stock', params.id);
+        await updateDoc(itemRef, {
+          name: itemName,
+          stock: parseInt(stockAmt),
+        });
+        Alert.alert('Success', 'Item updated successfully.');
       } else {
-        // Naya item add karne ka logic
-        list.push(newItem);
+        // Naya item add karne ka logic (Add)
+        await addDoc(collection(db, 'stock'), {
+          name: itemName,
+          stock: parseInt(stockAmt),
+        });
+        Alert.alert('Success', 'Item added successfully.');
       }
-
-      const updatedJsonValue = JSON.stringify(list);
-      await AsyncStorage.setItem('@stockList', updatedJsonValue);
-
-      Alert.alert('Success', `Item ${isEdit ? 'updated' : 'added'} successfully.`);
       router.back(); // Waapas Home screen par jao
     } catch (e) {
-      console.error('Failed to save item.', e);
+      console.error('Error adding/updating document: ', e);
       Alert.alert('Error', 'Failed to save item.');
     }
   };
@@ -86,7 +84,7 @@ export default function CreateScreen() {
         value={stockAmt}
         onChangeText={setStockAmt}
         style={styles.input}
-        keyboardType="numeric" // Taki sirf number keypad khule
+        keyboardType="numeric"
       />
       <Pressable style={styles.addButton} onPress={AddItemHandler}>
         <Text style={styles.buttonText}>
@@ -97,7 +95,7 @@ export default function CreateScreen() {
   );
 }
 
-// Styles
+// Styles (Styles mein koi badlaav nahi hai)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
