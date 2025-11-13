@@ -1,40 +1,64 @@
 // app/index.js
 import { View, Text, FlatList, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { Link } from 'expo-router';
-import { db } from '../firebaseConfig'; // Firebase config ko import kiya
-import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore'; // Firebase functions
+import { Link, useRouter } from 'expo-router';
+import { db, auth } from '../firebaseConfig'; 
+import { signOut } from 'firebase/auth'; 
+import { collection, onSnapshot, deleteDoc, doc, query, where } from 'firebase/firestore'; // query aur where ko import kiya
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const [stockList, setStockList] = useState([]);
-  const [loading, setLoading] = useState(true); // Loading state add kiya
+  const [loading, setLoading] = useState(true);
+  const router = useRouter(); 
 
-  // Yeh function ab real-time mein data sunega
   useEffect(() => {
-    setLoading(true);
-    // 'stock' collection ko suno
-    const unsubscribe = onSnapshot(collection(db, 'stock'), (querySnapshot) => {
-      const items = [];
-      querySnapshot.forEach((doc) => {
-        // id ko data ke saath merge karo
-        items.push({ id: doc.id, ...doc.data() });
-      });
-      setStockList(items);
-      setLoading(false);
-    });
+    // Check karo ki user login hai ya nahi
+    const user = auth.currentUser;
+    if (user) {
+      setLoading(true);
 
-    // Cleanup function (jab component band ho)
-    return () => unsubscribe();
+      // Naya Kadam: Ek query (sawaal) banao
+      // 'stock' collection mein jao, lekin sirf woh documents lao
+      // 'jahaan' (where) 'userId' field current user ki ID ke barabar ho
+      const q = query(collection(db, 'stock'), where("userId", "==", user.uid));
+
+      // Ab poori collection ki jagah, sirf uss query (q) ko suno
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const items = [];
+        querySnapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setStockList(items);
+        setLoading(false);
+      });
+      
+      return () => unsubscribe(); // Cleanup function
+    } else {
+      // Agar user login nahi hai (jo hona nahi chahiye _layout ki wajah se)
+      setStockList([]);
+      setLoading(false);
+    }
   }, []); // [] ka matlab yeh sirf ek baar run hoga
 
   const deleteItem = async (id) => {
     try {
-      // AsyncStorage ki jagah ab Firestore se delete karenge
+      // Humein yahaan user check karne ki zaroorat nahi
+      // Kyunki Firebase Rules apne aap galat delete ko rok denge
       await deleteDoc(doc(db, 'stock', id));
       Alert.alert('Success', 'Item deleted successfully.');
     } catch (e) {
       console.error('Error deleting document: ', e);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // _layout.js file apne aap user ko login screen par bhej degi
+    } catch (error) {
+      console.error('Logout Error', error);
+      Alert.alert('Error', 'Failed to log out.');
     }
   };
 
@@ -45,7 +69,7 @@ export default function HomeScreen() {
       <Link
         href={{
           pathname: '/create',
-          params: { id: item.id }, // Edit karne ke liye ID bhej rahe hain
+          params: { id: item.id }, 
         }}
         asChild>
         <Pressable style={styles.editButton}>
@@ -60,7 +84,13 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Dashboard (Cloud)</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>My Private Stock</Text>
+        <Pressable onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </Pressable>
+      </View>
+      
       <Link href="/create" asChild>
         <Pressable style={styles.addButton}>
           <Text style={styles.buttonText}>ADD ITEM IN STOCK</Text>
@@ -83,18 +113,33 @@ export default function HomeScreen() {
   );
 }
 
-// Styles (Styles mein koi badlaav nahi hai)
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
     textAlign: 'center',
+  },
+  logoutButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: '#DC3545',
+    borderRadius: 5,
+  },
+  logoutText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   addButton: {
     backgroundColor: '#007BFF',

@@ -3,6 +3,7 @@
 // Firebase ki main libraries ko import karo
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // <-- YEH NAYI LINE HAI
 
 // Aapka Firebase configuration (yeh secret hai)
 // Yeh values aapki 'google-services.json' se li gayi hain
@@ -20,3 +21,6 @@ const app = initializeApp(firebaseConfig);
 
 // Firestore database ko chalu karo aur use 'db' naam se export karo
 export const db = getFirestore(app);
+
+// Firebase Auth ko chalu karo aur use 'auth' naam se export karo
+export const auth = getAuth(app); // <-- YEH NAYI LINE HAI

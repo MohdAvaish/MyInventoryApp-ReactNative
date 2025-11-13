@@ -2,8 +2,8 @@
 import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { db } from '../firebaseConfig'; // Firebase config ko import kiya
-import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore'; // Firebase functions
+import { db, auth } from '../firebaseConfig'; // Firebase auth ko import kiya
+import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CreateScreen() {
@@ -23,7 +23,6 @@ export default function CreateScreen() {
 
   const loadItemData = async (id) => {
     try {
-      // AsyncStorage ki jagah ab Firestore se item fetch karenge
       const docRef = doc(db, 'stock', id);
       const docSnap = await getDoc(docRef);
 
@@ -45,6 +44,14 @@ export default function CreateScreen() {
       return;
     }
 
+    // Naya Kadam: Current user ki ID check karo
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Error', 'You are not logged in!');
+      router.replace('/login');
+      return;
+    }
+
     try {
       if (isEdit) {
         // Edit waala logic (Update)
@@ -52,6 +59,7 @@ export default function CreateScreen() {
         await updateDoc(itemRef, {
           name: itemName,
           stock: parseInt(stockAmt),
+          // userId ko update nahi karna, woh wahi rahega
         });
         Alert.alert('Success', 'Item updated successfully.');
       } else {
@@ -59,13 +67,14 @@ export default function CreateScreen() {
         await addDoc(collection(db, 'stock'), {
           name: itemName,
           stock: parseInt(stockAmt),
+          userId: user.uid, // <-- SABSE ZAROORI LINE: User ki ID save karo
         });
         Alert.alert('Success', 'Item added successfully.');
       }
-      router.back(); // Waapas Home screen par jao
+      router.back(); 
     } catch (e) {
       console.error('Error adding/updating document: ', e);
-      Alert.alert('Error', 'Failed to save item.');
+      Alert.alert('Error', 'Failed to save item. Check permissions.');
     }
   };
 
