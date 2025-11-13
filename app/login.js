@@ -102,41 +102,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5', // Background ko halka grey kiya
     justifyContent: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 36, // Font bada kiya
+    fontWeight: '800', // Font ko extra bold kiya
+    color: '#333', // Color ko dark grey kiya
     marginBottom: 40,
     textAlign: 'center',
   },
   input: {
-    height: 50,
-    borderColor: '#ccc',
+    height: 55, // Input field thodi badi ki
+    backgroundColor: '#FFFFFF', // Input ka background white
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12, // Border ko rounded kiya
     paddingHorizontal: 15,
     fontSize: 16,
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#0052CC', // Blue ko thoda dark aur professional kiya
+    padding: 18, // Button ko thoda bada kiya
+    borderRadius: 12, // Rounded border
     alignItems: 'center',
+    marginTop: 10, // Upar se thoda gap
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18, // Font size thoda bada
   },
   toggleButton: {
-    marginTop: 20,
+    marginTop: 25, // Neeche waale button se gap badhaya
     alignItems: 'center',
   },
   toggleText: {
-    color: '#007BFF',
+    color: '#0052CC', // Color ko button se match kiya
     fontSize: 16,
+    fontWeight: '600', // Thoda bold kiya
   },
 });

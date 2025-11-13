@@ -1,10 +1,9 @@
-// app/index.js
 import { View, Text, FlatList, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { db, auth } from '../firebaseConfig'; 
 import { signOut } from 'firebase/auth'; 
-import { collection, onSnapshot, deleteDoc, doc, query, where } from 'firebase/firestore'; // query aur where ko import kiya
+import { collection, onSnapshot, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -13,17 +12,10 @@ export default function HomeScreen() {
   const router = useRouter(); 
 
   useEffect(() => {
-    // Check karo ki user login hai ya nahi
     const user = auth.currentUser;
     if (user) {
       setLoading(true);
-
-      // Naya Kadam: Ek query (sawaal) banao
-      // 'stock' collection mein jao, lekin sirf woh documents lao
-      // 'jahaan' (where) 'userId' field current user ki ID ke barabar ho
       const q = query(collection(db, 'stock'), where("userId", "==", user.uid));
-
-      // Ab poori collection ki jagah, sirf uss query (q) ko suno
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const items = [];
         querySnapshot.forEach((doc) => {
@@ -32,19 +24,15 @@ export default function HomeScreen() {
         setStockList(items);
         setLoading(false);
       });
-      
-      return () => unsubscribe(); // Cleanup function
+      return () => unsubscribe();
     } else {
-      // Agar user login nahi hai (jo hona nahi chahiye _layout ki wajah se)
       setStockList([]);
       setLoading(false);
     }
-  }, []); // [] ka matlab yeh sirf ek baar run hoga
+  }, []);
 
   const deleteItem = async (id) => {
     try {
-      // Humein yahaan user check karne ki zaroorat nahi
-      // Kyunki Firebase Rules apne aap galat delete ko rok denge
       await deleteDoc(doc(db, 'stock', id));
       Alert.alert('Success', 'Item deleted successfully.');
     } catch (e) {
@@ -55,7 +43,6 @@ export default function HomeScreen() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // _layout.js file apne aap user ko login screen par bhej degi
     } catch (error) {
       console.error('Logout Error', error);
       Alert.alert('Error', 'Failed to log out.');
@@ -113,12 +100,11 @@ export default function HomeScreen() {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
   },
   header: {
     flexDirection: 'row',
@@ -127,77 +113,83 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#333',
   },
   logoutButton: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
     backgroundColor: '#DC3545',
-    borderRadius: 5,
+    borderRadius: 8,
   },
   logoutText: {
     color: '#fff',
     fontWeight: 'bold',
   },
   addButton: {
-    backgroundColor: '#007BFF',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#0052CC',
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   headingText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 15,
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    paddingTop: 15,
+    paddingTop: 20,
   },
   itemContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFCCCC',
-    backgroundColor: '#F9F9F9',
-    marginBottom: 5,
-    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   itemName: {
     fontSize: 18,
+    fontWeight: '600',
     flex: 2,
+    color: '#333',
   },
   itemStock: {
     fontSize: 18,
     flex: 1,
-    color: 'green',
+    color: '#28a745',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   editButton: {
     backgroundColor: '#FFC107',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 15,
-    borderRadius: 5,
-    marginRight: 5,
+    borderRadius: 8,
+    marginRight: 8,
   },
   deleteButton: {
     backgroundColor: '#DC3545',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 15,
-    borderRadius: 5,
+    borderRadius: 8,
   },
   emptyText: {
     textAlign: 'center',
-    marginTop: 30,
+    marginTop: 40,
     fontSize: 16,
     color: 'gray',
   },

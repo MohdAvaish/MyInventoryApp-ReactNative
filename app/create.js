@@ -1,8 +1,7 @@
-// app/create.js
 import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { db, auth } from '../firebaseConfig'; // Firebase auth ko import kiya
+import { db, auth } from '../firebaseConfig';
 import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -44,7 +43,6 @@ export default function CreateScreen() {
       return;
     }
 
-    // Naya Kadam: Current user ki ID check karo
     const user = auth.currentUser;
     if (!user) {
       Alert.alert('Error', 'You are not logged in!');
@@ -54,20 +52,17 @@ export default function CreateScreen() {
 
     try {
       if (isEdit) {
-        // Edit waala logic (Update)
         const itemRef = doc(db, 'stock', params.id);
         await updateDoc(itemRef, {
           name: itemName,
           stock: parseInt(stockAmt),
-          // userId ko update nahi karna, woh wahi rahega
         });
         Alert.alert('Success', 'Item updated successfully.');
       } else {
-        // Naya item add karne ka logic (Add)
         await addDoc(collection(db, 'stock'), {
           name: itemName,
           stock: parseInt(stockAmt),
-          userId: user.uid, // <-- SABSE ZAROORI LINE: User ki ID save karo
+          userId: user.uid,
         });
         Alert.alert('Success', 'Item added successfully.');
       }
@@ -104,37 +99,40 @@ export default function CreateScreen() {
   );
 }
 
-// Styles (Styles mein koi badlaav nahi hai)
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#333',
+    marginBottom: 40,
     textAlign: 'center',
   },
   input: {
-    height: 50,
-    borderColor: 'gray',
+    height: 55,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 15,
     fontSize: 16,
     marginBottom: 20,
   },
   addButton: {
     backgroundColor: '#28A745',
-    padding: 15,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
 });

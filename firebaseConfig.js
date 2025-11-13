@@ -1,12 +1,14 @@
 // firebaseConfig.js
 
-// Firebase ki main libraries ko import karo
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth"; // <-- YEH NAYI LINE HAI
 
-// Aapka Firebase configuration (yeh secret hai)
-// Yeh values aapki 'google-services.json' se li gayi hain
+// --- YEH BADLAAV HAIN ---
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+// -------------------------
+
+// Aapka Firebase configuration (yeh wahi hai)
 const firebaseConfig = {
   apiKey: "AIzaSyC-Tz0QZzeZE9LTwD5PQGIadfD4LCI9iTU",
   authDomain: "myinventoryapp-77be8.firebaseapp.com",
@@ -19,8 +21,10 @@ const firebaseConfig = {
 // Firebase ko in keys ke saath chalu karo
 const app = initializeApp(firebaseConfig);
 
-// Firestore database ko chalu karo aur use 'db' naam se export karo
+// Firestore database (Database)
 export const db = getFirestore(app);
 
-// Firebase Auth ko chalu karo aur use 'auth' naam se export karo
-export const auth = getAuth(app); // <-- YEH NAYI LINE HAI
+// Firebase Auth (Login/Signup) - NAYA TAREEKA
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
